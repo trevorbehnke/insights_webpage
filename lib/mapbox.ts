@@ -59,6 +59,18 @@ function bboxFromCenter(
   return [lng - lngDelta, lat - latDelta, lng + lngDelta, lat + latDelta];
 }
 
+async function batchPromises<T>(
+  tasks: (() => Promise<T>)[],
+  concurrency: number
+): Promise<T[]> {
+  const results: T[] = [];
+  for (let i = 0; i < tasks.length; i += concurrency) {
+    const batch = tasks.slice(i, i + concurrency);
+    results.push(...(await Promise.all(batch.map((fn) => fn()))));
+  }
+  return results;
+}
+
 async function searchPOIs(
   lat: number,
   lng: number,
@@ -69,27 +81,35 @@ async function searchPOIs(
   const bbox = bboxFromCenter(lat, lng, radiusMiles);
   const url = `${BASE}/search/searchbox/v1/category/${categoryId}?access_token=${TOKEN}&proximity=${lng},${lat}&limit=25&bbox=${bbox.join(",")}`;
 
-  const res = await fetch(url);
-  if (!res.ok) return [];
-  const data = await res.json();
-
-  return (data.features || []).map(
-    (f: {
-      properties: { name?: string };
-      geometry: { coordinates: [number, number] };
-    }) => {
-      const fLng = f.geometry.coordinates[0];
-      const fLat = f.geometry.coordinates[1];
-      return {
-        name: f.properties.name || "Unknown",
-        category,
-        lat: fLat,
-        lng: fLng,
-        distance_mi:
-          Math.round(haversineDistance(lat, lng, fLat, fLng) * 100) / 100,
-      };
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const res = await fetch(url);
+    if (res.ok) {
+      const data = await res.json();
+      return (data.features || []).map(
+        (f: {
+          properties: { name?: string };
+          geometry: { coordinates: [number, number] };
+        }) => {
+          const fLng = f.geometry.coordinates[0];
+          const fLat = f.geometry.coordinates[1];
+          return {
+            name: f.properties.name || "Unknown",
+            category,
+            lat: fLat,
+            lng: fLng,
+            distance_mi:
+              Math.round(haversineDistance(lat, lng, fLat, fLng) * 100) / 100,
+          };
+        }
+      );
     }
-  );
+    if (res.status === 429 && attempt < 2) {
+      await new Promise((r) => setTimeout(r, 200 * (attempt + 1)));
+      continue;
+    }
+    return [];
+  }
+  return [];
 }
 
 export async function searchAmenities(
@@ -97,16 +117,12 @@ export async function searchAmenities(
   lng: number
 ): Promise<{ walking: Amenity[]; driving: Amenity[] }> {
   const categories = Object.keys(POI_CATEGORIES);
-  // Search all categories at both radii
-  const walkingPromises = categories.map((cat) =>
-    searchPOIs(lat, lng, 1, cat)
-  );
-  const drivingPromises = categories.map((cat) =>
-    searchPOIs(lat, lng, 5, cat)
-  );
+  // Batch requests to avoid hitting Mapbox rate limits on serverless
+  const walkingTasks = categories.map((cat) => () => searchPOIs(lat, lng, 1, cat));
+  const drivingTasks = categories.map((cat) => () => searchPOIs(lat, lng, 5, cat));
 
-  const walkingResults = await Promise.all(walkingPromises);
-  const drivingResults = await Promise.all(drivingPromises);
+  const walkingResults = await batchPromises(walkingTasks, 4);
+  const drivingResults = await batchPromises(drivingTasks, 4);
 
   const walking = walkingResults.flat().filter((a) => a.distance_mi <= 1);
   const driving = drivingResults.flat().filter((a) => a.distance_mi <= 5);
