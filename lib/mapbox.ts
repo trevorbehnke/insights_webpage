@@ -21,21 +21,16 @@ export async function forwardGeocode(query: string): Promise<GeoResult[]> {
   );
 }
 
-const POI_CATEGORIES = [
-  "restaurant",
-  "cafe",
-  "bar",
-  "grocery",
-  "park",
-  "school",
-  "pharmacy",
-  "transit",
-  "shopping",
-];
-
-function milesToMeters(miles: number): number {
-  return miles * 1609.34;
-}
+const POI_SEARCH_TERMS: Record<string, string> = {
+  restaurant: "restaurant",
+  cafe: "cafe coffee shop",
+  grocery: "grocery store supermarket",
+  park: "park playground",
+  school: "school",
+  pharmacy: "pharmacy drugstore",
+  transit: "bus stop train station subway",
+  shopping: "shopping mall retail store",
+};
 
 function haversineDistance(
   lat1: number,
@@ -54,41 +49,14 @@ function haversineDistance(
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-// Map Mapbox Geocoding V6 category to our simplified categories
-function mapCategory(maki: string, poiCategory: string[]): string {
-  const cats = poiCategory.map((c) => c.toLowerCase()).join(" ");
-  const m = (maki || "").toLowerCase();
-  const all = `${cats} ${m}`;
-
-  if (all.includes("restaurant") || all.includes("food")) return "restaurant";
-  if (all.includes("cafe") || all.includes("coffee")) return "cafe";
-  if (all.includes("bar") || all.includes("beer") || all.includes("alcohol"))
-    return "bar";
-  if (
-    all.includes("grocery") ||
-    all.includes("supermarket") ||
-    all.includes("food_and_drink_stores")
-  )
-    return "grocery";
-  if (all.includes("park") || all.includes("garden")) return "park";
-  if (all.includes("school") || all.includes("education")) return "school";
-  if (all.includes("pharmacy") || all.includes("medical")) return "pharmacy";
-  if (
-    all.includes("transit") ||
-    all.includes("bus") ||
-    all.includes("train") ||
-    all.includes("rail") ||
-    all.includes("subway")
-  )
-    return "transit";
-  if (
-    all.includes("shop") ||
-    all.includes("store") ||
-    all.includes("retail") ||
-    all.includes("mall")
-  )
-    return "shopping";
-  return "shopping"; // default fallback
+function bboxFromCenter(
+  lat: number,
+  lng: number,
+  radiusMiles: number
+): [number, number, number, number] {
+  const latDelta = radiusMiles / 69.0;
+  const lngDelta = radiusMiles / (69.0 * Math.cos((lat * Math.PI) / 180));
+  return [lng - lngDelta, lat - latDelta, lng + lngDelta, lat + latDelta];
 }
 
 async function searchPOIs(
@@ -97,9 +65,9 @@ async function searchPOIs(
   radiusMiles: number,
   category: string
 ): Promise<Amenity[]> {
-  const radiusMeters = Math.round(milesToMeters(radiusMiles));
-  // Use Mapbox Search Box API (category search)
-  const url = `${BASE}/search/searchbox/v1/category/${category}?access_token=${TOKEN}&proximity=${lng},${lat}&limit=10&radius=${radiusMeters}&language=en`;
+  const searchTerm = POI_SEARCH_TERMS[category] || category;
+  const bbox = bboxFromCenter(lat, lng, radiusMiles);
+  const url = `${BASE}/search/searchbox/v1/forward?q=${encodeURIComponent(searchTerm)}&access_token=${TOKEN}&proximity=${lng},${lat}&types=poi&limit=10&bbox=${bbox.join(",")}`;
 
   const res = await fetch(url);
   if (!res.ok) return [];
@@ -107,21 +75,14 @@ async function searchPOIs(
 
   return (data.features || []).map(
     (f: {
-      properties: {
-        name?: string;
-        maki?: string;
-        poi_category?: string[];
-      };
+      properties: { name?: string };
       geometry: { coordinates: [number, number] };
     }) => {
       const fLng = f.geometry.coordinates[0];
       const fLat = f.geometry.coordinates[1];
       return {
         name: f.properties.name || "Unknown",
-        category: mapCategory(
-          f.properties.maki || "",
-          f.properties.poi_category || [category]
-        ),
+        category,
         lat: fLat,
         lng: fLng,
         distance_mi:
@@ -135,11 +96,12 @@ export async function searchAmenities(
   lat: number,
   lng: number
 ): Promise<{ walking: Amenity[]; driving: Amenity[] }> {
+  const categories = Object.keys(POI_SEARCH_TERMS);
   // Search all categories at both radii
-  const walkingPromises = POI_CATEGORIES.map((cat) =>
+  const walkingPromises = categories.map((cat) =>
     searchPOIs(lat, lng, 1, cat)
   );
-  const drivingPromises = POI_CATEGORIES.map((cat) =>
+  const drivingPromises = categories.map((cat) =>
     searchPOIs(lat, lng, 5, cat)
   );
 
