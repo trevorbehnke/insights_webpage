@@ -21,15 +21,15 @@ export async function forwardGeocode(query: string): Promise<GeoResult[]> {
   );
 }
 
-const POI_SEARCH_TERMS: Record<string, string> = {
+const POI_CATEGORIES: Record<string, string> = {
   restaurant: "restaurant",
-  cafe: "cafe coffee shop",
-  grocery: "grocery store supermarket",
-  park: "park playground",
+  cafe: "coffee",
+  grocery: "grocery",
+  park: "park",
   school: "school",
-  pharmacy: "pharmacy drugstore",
-  transit: "bus stop train station subway",
-  shopping: "shopping mall retail store",
+  pharmacy: "pharmacy",
+  transit: "transit",
+  shopping: "shopping",
 };
 
 function haversineDistance(
@@ -65,9 +65,9 @@ async function searchPOIs(
   radiusMiles: number,
   category: string
 ): Promise<Amenity[]> {
-  const searchTerm = POI_SEARCH_TERMS[category] || category;
+  const categoryId = POI_CATEGORIES[category] || category;
   const bbox = bboxFromCenter(lat, lng, radiusMiles);
-  const url = `${BASE}/search/searchbox/v1/forward?q=${encodeURIComponent(searchTerm)}&access_token=${TOKEN}&proximity=${lng},${lat}&types=poi&limit=10&bbox=${bbox.join(",")}`;
+  const url = `${BASE}/search/searchbox/v1/category/${categoryId}?access_token=${TOKEN}&proximity=${lng},${lat}&limit=25&bbox=${bbox.join(",")}`;
 
   const res = await fetch(url);
   if (!res.ok) return [];
@@ -96,7 +96,7 @@ export async function searchAmenities(
   lat: number,
   lng: number
 ): Promise<{ walking: Amenity[]; driving: Amenity[] }> {
-  const categories = Object.keys(POI_SEARCH_TERMS);
+  const categories = Object.keys(POI_CATEGORIES);
   // Search all categories at both radii
   const walkingPromises = categories.map((cat) =>
     searchPOIs(lat, lng, 1, cat)
