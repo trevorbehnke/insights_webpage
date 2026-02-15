@@ -92,17 +92,17 @@ export default function InsightsPage({
       ) : (
         <Grid container spacing={3} sx={{ mb: 4 }}>
           <Grid size={{ xs: 12, sm: 4 }}>
-            <Paper sx={{ p: 3 }}>
+            <Paper sx={{ p: 3, height: "100%" }}>
               <ScoreDial score={walkingScore} label="Walking Score" />
             </Paper>
           </Grid>
           <Grid size={{ xs: 12, sm: 4 }}>
-            <Paper sx={{ p: 3 }}>
+            <Paper sx={{ p: 3, height: "100%" }}>
               <ScoreDial score={drivingScore} label="Driving Score" />
             </Paper>
           </Grid>
           <Grid size={{ xs: 12, sm: 4 }}>
-            <Paper sx={{ p: 3, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <Paper sx={{ p: 3, height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <UrbanIndex label={urbanLabel} density={density} />
             </Paper>
           </Grid>
