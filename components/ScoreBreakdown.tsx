@@ -67,6 +67,19 @@ export default function ScoreBreakdown({
           Walking Score ({walkingScore}/100)
         </Typography>
         <Box sx={{ mb: 3 }}>
+          {/* Column headers */}
+          <Box sx={{ display: "flex", alignItems: "center", mb: 0.5, gap: 1 }}>
+            <Typography variant="caption" color="text.secondary" sx={{ width: 110, flexShrink: 0 }}>
+              Category
+            </Typography>
+            <Box sx={{ flex: 1 }} />
+            <Typography variant="caption" color="text.secondary" sx={{ width: 70, textAlign: "right", flexShrink: 0 }}>
+              Found
+            </Typography>
+            <Typography variant="caption" color="text.secondary" sx={{ width: 55, textAlign: "right", flexShrink: 0 }}>
+              Score
+            </Typography>
+          </Box>
           {categories.map((cat) => {
             const count = walkingCounts[cat] || 0;
             const ideal = WALKING_IDEALS[cat] || 1;
@@ -84,7 +97,7 @@ export default function ScoreBreakdown({
                   sx={{ flex: 1, height: 8, borderRadius: 4 }}
                 />
                 <Typography variant="caption" sx={{ width: 70, textAlign: "right", flexShrink: 0 }}>
-                  {count}/{ideal} found
+                  {count} found
                 </Typography>
                 <Typography variant="caption" color="text.secondary" sx={{ width: 55, textAlign: "right", flexShrink: 0 }}>
                   {earned}/{weight}
@@ -99,6 +112,19 @@ export default function ScoreBreakdown({
           Driving Score ({drivingScore}/100)
         </Typography>
         <Box>
+          {/* Column headers */}
+          <Box sx={{ display: "flex", alignItems: "center", mb: 0.5, gap: 1 }}>
+            <Typography variant="caption" color="text.secondary" sx={{ width: 110, flexShrink: 0 }}>
+              Category
+            </Typography>
+            <Box sx={{ flex: 1 }} />
+            <Typography variant="caption" color="text.secondary" sx={{ width: 70, textAlign: "right", flexShrink: 0 }}>
+              Nearest
+            </Typography>
+            <Typography variant="caption" color="text.secondary" sx={{ width: 55, textAlign: "right", flexShrink: 0 }}>
+              Score
+            </Typography>
+          </Box>
           {categories.map((cat) => {
             const dist = nearest[cat];
             const weight = CATEGORY_WEIGHTS[cat];
