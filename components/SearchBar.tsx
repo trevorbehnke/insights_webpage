@@ -81,7 +81,7 @@ export default function SearchBar() {
         }}
         sx={{
           "& .MuiOutlinedInput-root": {
-            backgroundColor: "white",
+            backgroundColor: "background.paper",
             borderRadius: 3,
           },
         }}
