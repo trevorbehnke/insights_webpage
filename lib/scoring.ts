@@ -57,11 +57,24 @@ export function calcWalkingScore(amenities: Amenity[]): number {
 }
 
 export function calcDrivingScore(amenities: Amenity[]): number {
-  const drivingIdeals: Record<string, number> = {};
-  for (const [key, val] of Object.entries(WALKING_IDEALS)) {
-    drivingIdeals[key] = val * 3;
+  // Find nearest amenity per category
+  const nearest: Record<string, number> = {};
+  for (const a of amenities) {
+    if (nearest[a.category] === undefined || a.distance_mi < nearest[a.category]) {
+      nearest[a.category] = a.distance_mi;
+    }
   }
-  return computeScore(amenities, drivingIdeals);
+
+  // Score each category by proximity: closer = higher score
+  let score = 0;
+  for (const [category, weight] of Object.entries(CATEGORY_WEIGHTS)) {
+    const dist = nearest[category];
+    if (dist !== undefined) {
+      score += Math.max(0, 1 - dist / 5) * weight;
+    }
+  }
+
+  return Math.round(Math.min(Math.max(score, 0), 100));
 }
 
 export function calcUrbanIndex(walkingAmenities: Amenity[]): {
