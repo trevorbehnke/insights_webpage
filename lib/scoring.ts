@@ -61,9 +61,9 @@ export function calcUrbanIndex(walkingAmenities: Amenity[]): {
   const density = walkingAmenities.length / Math.PI; // amenities per sq mile (radius = 1mi)
 
   let label: string;
-  if (density >= 50) label = "Urban";
-  else if (density >= 20) label = "Dense Suburban";
-  else if (density >= 8) label = "Suburban";
+  if (density >= 30) label = "Urban";
+  else if (density >= 15) label = "Dense Suburban";
+  else if (density >= 6) label = "Suburban";
   else label = "Rural";
 
   return { label, density: Math.round(density * 10) / 10 };

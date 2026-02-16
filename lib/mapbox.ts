@@ -21,14 +21,16 @@ export async function forwardGeocode(query: string): Promise<GeoResult[]> {
   );
 }
 
-const POI_CATEGORIES: Record<string, string> = {
+// Maps scoring categories to canonical Mapbox SearchBox v1 category IDs.
+// Transit uses multiple IDs to capture bus stops, train stations, etc.
+const POI_CATEGORIES: Record<string, string | string[]> = {
   restaurant: "restaurant",
-  cafe: "coffee",
+  cafe: "cafe",
   grocery: "grocery",
   park: "park",
   school: "school",
   pharmacy: "pharmacy",
-  transit: "transit",
+  transit: ["bus_stop", "public_transportation_station", "railway_station"],
   shopping: "shopping",
 };
 
@@ -75,11 +77,11 @@ async function searchPOIs(
   lat: number,
   lng: number,
   radiusMiles: number,
-  category: string
+  category: string,
+  mapboxCategoryId: string
 ): Promise<Amenity[]> {
-  const categoryId = POI_CATEGORIES[category] || category;
   const bbox = bboxFromCenter(lat, lng, radiusMiles);
-  const url = `${BASE}/search/searchbox/v1/category/${categoryId}?access_token=${TOKEN}&proximity=${lng},${lat}&limit=25&bbox=${bbox.join(",")}`;
+  const url = `${BASE}/search/searchbox/v1/category/${mapboxCategoryId}?access_token=${TOKEN}&proximity=${lng},${lat}&limit=25&bbox=${bbox.join(",")}`;
 
   for (let attempt = 0; attempt < 3; attempt++) {
     const res = await fetch(url);
@@ -116,10 +118,22 @@ export async function searchAmenities(
   lat: number,
   lng: number
 ): Promise<{ walking: Amenity[]; driving: Amenity[] }> {
-  const categories = Object.keys(POI_CATEGORIES);
+  // Build tasks, expanding categories with multiple Mapbox IDs (e.g. transit)
+  const taskEntries: { category: string; mapboxId: string }[] = [];
+  for (const [category, ids] of Object.entries(POI_CATEGORIES)) {
+    const idList = Array.isArray(ids) ? ids : [ids];
+    for (const id of idList) {
+      taskEntries.push({ category, mapboxId: id });
+    }
+  }
+
   // Batch requests to avoid hitting Mapbox rate limits on serverless
-  const walkingTasks = categories.map((cat) => () => searchPOIs(lat, lng, 1, cat));
-  const drivingTasks = categories.map((cat) => () => searchPOIs(lat, lng, 5, cat));
+  const walkingTasks = taskEntries.map(
+    ({ category, mapboxId }) => () => searchPOIs(lat, lng, 1, category, mapboxId)
+  );
+  const drivingTasks = taskEntries.map(
+    ({ category, mapboxId }) => () => searchPOIs(lat, lng, 5, category, mapboxId)
+  );
 
   const walkingResults = await batchPromises(walkingTasks, 4);
   const drivingResults = await batchPromises(drivingTasks, 4);
