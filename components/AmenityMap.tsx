@@ -190,7 +190,7 @@ export default function AmenityMap({ lat, lng, amenities }: AmenityMapProps) {
             onClose={() => setSelected(null)}
             closeOnClick={false}
           >
-            <div>
+            <div style={{ color: "#333" }}>
               <strong>{selected.name}</strong>
               <br />
               <small>
