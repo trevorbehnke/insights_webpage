@@ -2,24 +2,34 @@ import { Amenity } from "./types";
 
 const WALKING_IDEALS: Record<string, number> = {
   grocery: 2,
-  restaurant: 5,
-  cafe: 3,
+  restaurant: 4,
+  cafe: 2,
   transit: 3,
   park: 2,
   school: 2,
   pharmacy: 1,
-  shopping: 3,
+  shopping: 2,
+  gym: 1,
+  bank: 1,
+  entertainment: 1,
+  medical: 1,
+  bar: 2,
 };
 
 const CATEGORY_WEIGHTS: Record<string, number> = {
-  grocery: 20,
-  restaurant: 15,
-  cafe: 10,
-  transit: 20,
-  park: 10,
-  school: 10,
-  pharmacy: 10,
+  grocery: 15,
+  restaurant: 12,
+  cafe: 7,
+  transit: 15,
+  park: 8,
+  school: 7,
+  pharmacy: 7,
   shopping: 5,
+  gym: 5,
+  bank: 5,
+  entertainment: 4,
+  medical: 5,
+  bar: 5,
 };
 
 function computeScore(

@@ -32,6 +32,11 @@ const POI_CATEGORIES: Record<string, string | string[]> = {
   pharmacy: "pharmacy",
   transit: ["bus_stop", "public_transportation_station", "railway_station"],
   shopping: "shopping",
+  gym: "gym",
+  bank: ["bank", "atm"],
+  entertainment: ["cinema", "theatre"],
+  medical: ["hospital", "medical_clinic"],
+  bar: "bar",
 };
 
 function haversineDistance(

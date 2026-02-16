@@ -22,6 +22,10 @@ const CATEGORY_COLORS: Record<string, string> = {
   pharmacy: "#00838f",
   transit: "#ef6c00",
   shopping: "#ad1457",
+  gym: "#ff5722",
+  bank: "#607d8b",
+  entertainment: "#7b1fa2",
+  medical: "#d32f2f",
 };
 
 interface AmenityMapProps {

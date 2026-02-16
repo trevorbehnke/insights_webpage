@@ -20,6 +20,10 @@ const CATEGORY_LABELS: Record<string, string> = {
   pharmacy: "Pharmacies & Medical",
   transit: "Public Transit",
   shopping: "Shopping & Retail",
+  gym: "Gyms & Fitness",
+  bank: "Banks & ATMs",
+  entertainment: "Entertainment",
+  medical: "Hospitals & Clinics",
 };
 
 interface AmenityListProps {
