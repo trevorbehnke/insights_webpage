@@ -21,6 +21,7 @@ import ScoreDial from "@/components/ScoreDial";
 import UrbanIndex from "@/components/UrbanIndex";
 import AmenityMap from "@/components/AmenityMap";
 import AmenityList from "@/components/AmenityList";
+import ScoreBreakdown from "@/components/ScoreBreakdown";
 
 export default function InsightsPage({
   params,
@@ -107,6 +108,18 @@ export default function InsightsPage({
             </Paper>
           </Grid>
         </Grid>
+      )}
+
+      {/* Score Breakdown */}
+      {!loading && (
+        <Box sx={{ mb: 4 }}>
+          <ScoreBreakdown
+            walking={walking}
+            driving={driving}
+            walkingScore={walkingScore}
+            drivingScore={drivingScore}
+          />
+        </Box>
       )}
 
       {/* Map */}

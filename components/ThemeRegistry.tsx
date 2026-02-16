@@ -1,9 +1,7 @@
 "use client";
 import * as React from "react";
-import { ThemeProvider } from "@mui/material/styles";
-import CssBaseline from "@mui/material/CssBaseline";
 import { AppRouterCacheProvider } from "@mui/material-nextjs/v15-appRouter";
-import theme from "@/lib/theme";
+import ThemeModeProvider from "@/components/ThemeContext";
 
 export default function ThemeRegistry({
   children,
@@ -12,10 +10,7 @@ export default function ThemeRegistry({
 }) {
   return (
     <AppRouterCacheProvider options={{ key: "mui", enableCssLayer: true }}>
-      <ThemeProvider theme={theme}>
-        <CssBaseline />
-        {children}
-      </ThemeProvider>
+      <ThemeModeProvider>{children}</ThemeModeProvider>
     </AppRouterCacheProvider>
   );
 }

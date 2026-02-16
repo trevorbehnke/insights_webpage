@@ -1,6 +1,6 @@
 import { Amenity } from "./types";
 
-const WALKING_IDEALS: Record<string, number> = {
+export const WALKING_IDEALS: Record<string, number> = {
   grocery: 2,
   restaurant: 4,
   cafe: 2,
@@ -16,7 +16,7 @@ const WALKING_IDEALS: Record<string, number> = {
   bar: 2,
 };
 
-const CATEGORY_WEIGHTS: Record<string, number> = {
+export const CATEGORY_WEIGHTS: Record<string, number> = {
   grocery: 15,
   restaurant: 12,
   cafe: 7,
