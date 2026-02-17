@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `npm run dev` — Start dev server at localhost:3000
 - `npm run build` — Production build (also serves as type-check; no separate tsc script)
 - `npm run lint` — ESLint via Next.js
-- No test framework is configured
+- `npm test` — Jest unit tests
 
 ## Architecture
 
@@ -27,12 +27,13 @@ Next.js 16 App Router application that displays neighborhood walkability/drivabi
 - `app/api/geocode/`, `app/api/amenities/`, `app/api/reverse-geocode/` — Server-side API wrappers that keep `MAPBOX_ACCESS_TOKEN` secret
 - `components/` — React components (SearchBar, ScoreDial, AmenityMap, AmenityList, UrbanIndex, etc.)
 - `lib/` — Shared utilities: `mapbox.ts` (API calls), `scoring.ts` (score algorithms), `slugs.ts` (URL encoding), `history.ts` (localStorage), `types.ts`, `theme.ts`
+- `__tests__/` — Jest unit tests for `scoring.ts`, `slugs.ts`, `history.ts`
 
 ### Scoring System (`lib/scoring.ts`)
 
 - **Walking score**: weighted sum across 8 categories within 1mi. Formula: `sum(min(count/ideal, 1.0) * weight)`, weights sum to 100.
-- **Driving score**: same formula at 5mi radius with 3× ideal counts.
-- **Urban index**: density = walking amenity count / π; thresholds at 50 (Urban), 20 (Dense Suburban), 8 (Suburban), <8 (Rural).
+- **Driving score**: proximity-based at 5mi radius. For each category, finds nearest amenity; formula: `max(0, 1 - dist/5) * weight`. Closer = higher score; 5mi+ = 0.
+- **Urban index**: density = walking amenity count / π; thresholds at 30 (Urban), 15 (Dense Suburban), 6 (Suburban), <6 (Rural).
 
 ### Mapbox API Usage (`lib/mapbox.ts`)
 

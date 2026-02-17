@@ -10,6 +10,7 @@
 | Map | mapbox-gl + react-map-gl | latest |
 | Language | TypeScript | 5.7 |
 | Runtime | Node.js | 22 LTS |
+| Testing | Jest + ts-jest | 30 |
 | Deployment | Vercel | — |
 
 ---
@@ -44,8 +45,13 @@ insights/
 │   ├── scoring.ts              # Walking score, driving score, urban index
 │   ├── slugs.ts                # Encode/decode address slugs
 │   └── history.ts              # localStorage search history helpers
+├── __tests__/
+│   ├── scoring.test.ts          # Walking/driving score & urban index tests
+│   ├── slugs.test.ts            # Slug encode/decode round-trip tests
+│   └── history.test.ts          # localStorage history tests
 ├── public/
 ├── .env.local                  # MAPBOX_ACCESS_TOKEN, NEXT_PUBLIC_MAPBOX_TOKEN
+├── jest.config.ts
 ├── next.config.ts
 ├── tsconfig.json
 └── package.json
@@ -120,36 +126,45 @@ All scoring lives in `lib/scoring.ts` and runs client-side after amenity data is
 
 ```
 Radius: 1 mile
-Categories & weights:
-  grocery:    20
-  restaurant: 15
-  cafe:       10
-  transit:    20
-  park:       10
-  school:     10
-  pharmacy:   10
-  shopping:    5
+13 categories & weights (sum to 100):
+  grocery:15  restaurant:12  cafe:7   transit:15  park:8
+  school:7    pharmacy:7     shopping:5  gym:5   bank:5
+  entertainment:4  medical:5  bar:5
+
+Ideal counts (saturation threshold per category):
+  grocery:2  restaurant:4  cafe:2  transit:3  park:2  school:2
+  pharmacy:1  shopping:2  gym:1  bank:1  entertainment:1  medical:1  bar:2
 
 For each category:
   categoryScore = min(count_in_radius / ideal_count, 1.0) * weight
-  (ideal_count varies: grocery=2, restaurant=5, cafe=3, transit=3, park=2, school=2, pharmacy=1, shopping=3)
 
 walkingScore = sum(categoryScores)
-Clamp to 0-100.
+Clamp to 0-100, rounded.
 ```
 
 ### Driving Score (0-100)
 
-Same formula, 5-mile radius, higher ideal counts (3x walking ideals) to reflect that drivers expect more variety at greater distance.
+Proximity-based scoring at 5-mile radius. Uses distance to nearest amenity per category rather than counts.
+
+```
+For each category:
+  Find nearest amenity distance (miles)
+  categoryScore = max(0, 1 - distance / 5) * weight
+
+drivingScore = sum(categoryScores)
+Clamp to 0-100, rounded.
+```
+
+Closer amenities score higher; anything at 5mi or beyond contributes 0.
 
 ### Urban/Suburban Index
 
 ```
 density = total_amenities_within_1mi / (π * 1²)   // amenities per sq mile
 
-if density >= 50  → "Urban"
-if density >= 20  → "Dense Suburban"
-if density >= 8   → "Suburban"
+if density >= 30  → "Urban"
+if density >= 15  → "Dense Suburban"
+if density >= 6   → "Suburban"
 else              → "Rural"
 ```
 
