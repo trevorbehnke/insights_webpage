@@ -23,9 +23,9 @@ Next.js 16 (App Router), React 19, MUI 7, TypeScript, Mapbox GL + react-map-gl, 
 
 ## Design Decisions
 
-- **8 POI categories scored with independent weights** (grocery, restaurants, coffee, parks, schools, pharmacies, gyms, transit). Each category has an ideal count representing "good enough" density. This produces more nuanced scores than a raw amenity count, an area with 50 restaurants but no grocery store shouldn't score perfectly.
-- **Driving score uses 3x the walking ideal counts at a 5-mile radius.** Drivers access more, but expectations scale with that access. This prevents the driving score from trivially maxing out everywhere.
-- **Urban/suburban index uses amenity density per square mile** mapped to four labels (Urban >= 50, Dense Suburban >= 20, Suburban >= 8, Rural below). Simple threshold-based classification that produces intuitive results.
+- **13 POI categories scored with independent weights** (grocery, restaurant, cafe, transit, park, school, pharmacy, shopping, gym, bank, entertainment, medical, bar). Each category has an ideal count representing "good enough" density. This produces more nuanced scores than a raw amenity count — an area with 50 restaurants but no grocery store shouldn't score perfectly.
+- **Driving score uses proximity-based scoring at a 5-mile radius.** Rather than counting amenities, it finds the nearest amenity per category and scores by closeness: `max(0, 1 - distance/5) * weight`. A grocery store 0.5mi away scores much higher than one at 4mi, and anything at 5mi+ contributes nothing. This reflects that for drivers, proximity matters more than sheer count.
+- **Urban/suburban index uses amenity density per square mile** mapped to four labels (Urban >= 30, Dense Suburban >= 15, Suburban >= 6, Rural below). Simple threshold-based classification that produces intuitive results.
 - **Slug-based shareable URLs** encode lat, lng, and address text directly in the path (`/address/40.7484,-73.9857,350-5th-Avenue-New-York-NY-10118`). Fresh amenity data is fetched on every page load using the embedded coordinates, so shared links always show current data without needing a database.
 - **Score Breakdown accordion** on the insights page shows per-category contributions to the walking and driving scores, so users can see exactly how the score was derived rather than just a number.
 - **Dark mode toggle and responsive layout** using MUI theming. Score cards stack on mobile, map and amenity lists are full-width.
@@ -43,7 +43,7 @@ I focused testing on pure logic functions tied directly to the assignment's requ
 ## What I'd Improve With More Time
 
 - Paginate Mapbox SearchBox results to avoid the 25-result-per-category cap in dense areas
-- Add distance-decay weighting so a grocery store 0.1 mi away contributes more than one at 0.9 mi
+- Add distance-decay weighting to the walking score (the driving score already uses proximity-based scoring, but walking currently only counts amenities within the radius)
 - E2E tests with Playwright for the full search-to-insights flow
 - Error boundaries and loading skeletons for a more resilient UX
 - Rate limiting on the API routes
